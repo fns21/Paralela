@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#Ex. de execução: ./E execP teste.txt
+
+# Compila e executa
+txt="$2"
+if [ "$1" == "execSP" ]; then
+    gcc -O3 -o shortest_superstring shortest_superstring.c
+    time ./shortest_superstring < "$2" > teste.s
+    gcc -O3 -mavx2 -fopenmp -o shortest_superstring_parallel shortest_superstring_parallel.c
+    time ./shortest_superstring_parallel < "$2" > teste2.s
+fi
+if [ "$1" == "execP" ]; then
+    gcc -O3 -mavx -fopenmp -o shortest_superstring_parallel shortest_superstring_parallel.c
+    time ./shortest_superstring_parallel < "$2" > teste2.s
+fi
+
+#Verifica corretude (verifica se cada linha esta presente nos dois arquivos de saida)
+sfiles=("teste.s" "teste2.s")
+lineno=2
+tail -n +2 "$txt" | while IFS= read -r line; do
+    if [ -z "$line" ]; then
+        echo "Linha $lineno vazia — ignorada"
+    else
+        for s in "${sfiles[@]}"; do
+            if grep -F -q -- "$line" "$s"; then
+                continue
+            else
+                echo "Linha $lineno NÃO encontrada em $s: $line"
+            fi
+        done
+    fi
+    lineno=$((lineno+1))
+done
+
+#Verifica diferenças caractere por caractere nos dois arquivos de saída (if sequencial.saida == paralelo.saida)
+str1=$(tr -d '\n' < "${sfiles[0]}")
+str2=$(tr -d '\n' < "${sfiles[1]}")
+len1=${#str1}
+len2=${#str2}
+maxlen=$(( len1 > len2 ? len1 : len2 ))
+echo "Comparando arquivos caractere por caractere:"
+echo "-------------------------------------------"
+for (( i=0; i<maxlen; i++ )); do
+    char1="${str1:i:1}"
+    char2="${str2:i:1}"
+    if [ "$char1" != "$char2" ]; then
+        echo "Diferença na posição $((i+1)): '$char1' vs '$char2'"
+    fi
+done
