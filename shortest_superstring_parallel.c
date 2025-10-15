@@ -5,7 +5,7 @@
 #include <omp.h>
 #include <limits.h>
 
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 
 /**
  * @brief Calcula o comprimento do maior sufixo de 'a' que é também um prefixo de 'b'.
@@ -215,7 +215,6 @@ int main() {
         if (scanf("%1023s", buffer) != 1) {
             fprintf(stderr, "Erro ao ler a string %d.\n", i + 1);
             // Libera memória já alocada antes de sair
-            #pragma omp parallel for
             for (int j = 0; j < i; ++j) {
                 free(strings[j]);
             }
@@ -232,13 +231,15 @@ int main() {
     }
 
     int string_count = n;
+    double start = omp_get_wtime();
     char* result = shortest_superstring(strings, &string_count);
-
+    double end = omp_get_wtime();
+    
     printf("%s\n", result);
-
+    fprintf(stderr, "Tempo de execução paralelo: %.6f segundos\n", end - start);
+    
     // Libera toda a memória alocada
     free(result);
-    #pragma omp parallel for
     for (int i = 0; i < string_count; ++i) {
         free(strings[i]);
     }
