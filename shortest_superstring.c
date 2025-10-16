@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <omp.h>
 
 /**
  * @brief Calcula o comprimento do maior sufixo de 'a' que é também um prefixo de 'b'.
@@ -57,10 +58,13 @@ char* merge_strings(const char* a, const char* b, int overlap_len) {
  * @return A superstring mais curta. O chamador deve liberar a memória.
  */
 char* shortest_superstring(char** strings, int* count) {
+    double parallelable_time_total = 0.0;
+
     while (*count > 1) {
         int max_overlap = -1;
         int best_i = -1, best_j = -1;
 
+        double start_parallelable_time_local = omp_get_wtime();
         // Encontra o par de strings com a maior sobreposição
         for (int i = 0; i < *count; ++i) {
             for (int j = 0; j < *count; ++j) {
@@ -99,7 +103,9 @@ char* shortest_superstring(char** strings, int* count) {
                 // --- MODIFICAÇÃO PRINCIPAL TERMINA AQUI ---
             }
         }
-        
+
+        double end_parallelable_time_local = omp_get_wtime();
+        parallelable_time_total += end_parallelable_time_local - start_parallelable_time_local;
         // Se não houver sobreposição, mescla os dois primeiros para evitar loop infinito
         // Esta parte pode ser removida se o critério de desempate garantir que um par
         // sempre seja escolhido, mas é uma boa salvaguarda.
@@ -124,20 +130,25 @@ char* shortest_superstring(char** strings, int* count) {
         // Substitui a string no índice menor pela nova string mesclada
         strings[idx_to_replace] = merged;
 
+        start_parallelable_time_local = omp_get_wtime();
         // Remove a string do índice maior, deslocando os elementos restantes para a esquerda
         for (int k = idx_to_remove; k < *count - 1; ++k) {
             strings[k] = strings[k + 1];
         }
+        end_parallelable_time_local = omp_get_wtime();
+        parallelable_time_total += end_parallelable_time_local - start_parallelable_time_local;
         
         (*count)--;
     }
 
+    fprintf(stderr, "Tempo total das regiões paralelizáveis: %.6f segundos\n", parallelable_time_total);
     // Retorna uma cópia da única string restante
     return strdup(strings[0]);
 }
 
 int main() {
     int n;
+    double start_time_global = omp_get_wtime();
     if (scanf("%d", &n) != 1 || n < 0) {
         fprintf(stderr, "Entrada inválida para o número de strings.\n");
         return 1;
@@ -182,6 +193,9 @@ int main() {
         free(strings[i]);
     }
     free(strings);
+
+    double end_time_global = omp_get_wtime();
+    fprintf(stderr, "Tempo de execução total: %.6f segundos\n", end_time_global - start_time_global);
 
     return 0;
 }

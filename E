@@ -5,13 +5,13 @@
 # Compila e executa
 txt="$2"
 if [ "$1" == "execSP" ]; then
-    gcc -O3 -o shortest_superstring shortest_superstring.c
-    time ./shortest_superstring < "$2" > teste.s
+    gcc -O3 -fopenmp -o shortest_superstring shortest_superstring.c
+    ./shortest_superstring < "$2" > teste.s
     gcc -O3 -mavx2 -fopenmp -o shortest_superstring_parallel shortest_superstring_parallel.c
     ./shortest_superstring_parallel < "$2" > teste2.s
 fi
 if [ "$1" == "execP" ]; then
-    gcc -O3 -mavx -fopenmp -o shortest_superstring_parallel shortest_superstring_parallel.c
+    gcc -O3 -mavx2 -fopenmp -o shortest_superstring_parallel shortest_superstring_parallel.c
     ./shortest_superstring_parallel < "$2" > teste2.s
 fi
 
